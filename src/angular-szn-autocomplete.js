@@ -325,9 +325,9 @@
 		if (this._options.onSelect) {
 			// call the "onSelect" option callback
 			if (typeof this._options.onSelect == "string") {
-				this._$scope[this._options.onSelect](item);
+				this._$scope[this._options.onSelect](item,this._$scope);
 			} else if (typeof this._options.onSelect == "function") {
-				this._options.onSelect(item);
+				this._options.onSelect(item,this._$scope);
 			}
 		}
 	};
