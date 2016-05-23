@@ -338,7 +338,15 @@
 	 */
 	SznAutocompleteLink.prototype._setValue = function (value) {
 		if (value) {
-			this._$scope[this._$attrs["ngModel"]] = value;
+			if(this._$scope[this._$attrs["ngModel"]]!=undefined){
+				this._$scope[this._$attrs["ngModel"]] = value;
+			}else {
+				if(typeof value=="string"){
+					this._$scope.$eval(this._$attrs["ngModel"]+"='"+value+"'");
+				}else{
+					this._$scope.$eval(this._$attrs["ngModel"]+"="+value+"");
+				}
+			}
 			this._$scope.$digest();
 		}
 	};
