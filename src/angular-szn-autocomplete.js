@@ -61,7 +61,8 @@
 		delay: 100, 											// time in ms to wait before calling for results
 		minLength: 1,											// minimal number of character that needs to be entered to search for results
 		uniqueId: null,											// this ID will be passed as an argument in every event to easily identify this instance (in case there are multiple instances on the page)
-		boldMatches: true										// bold matches in results?
+		boldMatches: true,
+		context:this										// bold matches in results?
 	};
 
 	SznAutocompleteLink.IGNORED_KEYS = [16, 17, 18, 20, 37];
@@ -84,7 +85,8 @@
 			options[key] = this._$attrs[key] || optionsObject[key] || this.constructor.DEFAULT_OPTIONS[key];
 		}
 
-		if (!this._$scope[options.searchMethod]) {
+		//if (!this._$scope[options.searchMethod]) {
+		if(!this._$scope.$eval(options.searchMethod)){
 			throw new Error("angular-szn-autocomplete: scope method \"" + options.searchMethod + "\" does not exist.");
 		}
 
@@ -227,7 +229,8 @@
 			}).bind(this)
 		);
 
-		this._$scope[this._options.searchMethod](query, this._deferredResults);
+		//this._$scope[this._options.searchMethod](query, this._deferredResults);
+		this._$scope.$eval(this._options.searchMethod).bind(this._options.context)(query, this._deferredResults);
 	};
 
 	/**
