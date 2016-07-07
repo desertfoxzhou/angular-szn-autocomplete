@@ -8,7 +8,7 @@
 (function () {
 	"use strict";
 
-	var ngModule = angular.module( "angular-szn-autocomplete", ["angular-szn-autocomplete/template/shadowinput.html", "angular-szn-autocomplete/template/default.html"]);
+	var ngModule = angular.module("angular-szn-autocomplete", ["angular-szn-autocomplete/template/shadowinput.html", "angular-szn-autocomplete/template/default.html"]);
 
 	var SznAutocompleteLink = function ($q, $timeout, $http, $compile, $templateCache, $scope, $elm, $attrs) {
 		this._$q = $q;
@@ -62,7 +62,8 @@
 		minLength: 1,											// minimal number of character that needs to be entered to search for results
 		uniqueId: null,											// this ID will be passed as an argument in every event to easily identify this instance (in case there are multiple instances on the page)
 		boldMatches: true,
-		context:this										// bold matches in results?
+		context: this,
+		focusEvent: false										// bold matches in results?
 	};
 
 	SznAutocompleteLink.IGNORED_KEYS = [16, 17, 18, 20, 37];
@@ -86,7 +87,7 @@
 		}
 
 		//if (!this._$scope[options.searchMethod]) {
-		if(!this._$scope.$eval(options.searchMethod)){
+		if (!this._$scope.$eval(options.searchMethod)) {
 			throw new Error("angular-szn-autocomplete: scope method \"" + options.searchMethod + "\" does not exist.");
 		}
 
@@ -115,7 +116,7 @@
 			.then((function () {
 				// disable native autocomplete
 				this._dom.input.attr("autocomplete", "off");
-
+				this._dom.input.bind("focus", this._focus.bind(this))
 				this._dom.input.bind("keyup", this._keyup.bind(this));
 				this._dom.input.bind("keydown", this._keydown.bind(this));
 				this._dom.input.bind("blur", (function () {
@@ -129,8 +130,23 @@
 				this._popupScope.select = this._select.bind(this);
 				this._popupScope.boldMatches = this._options.boldMatches;
 
-				this._$scope.$emit("sznAutocomplete-init", {instanceId: this._options.uniqueId});
+				this._$scope.$emit("sznAutocomplete-init", { instanceId: this._options.uniqueId });
 			}).bind(this));
+	};
+
+	/**
+	 * Handles focus event
+	 * Calls for suggestions when every conditions are met.
+	 * @param {object} event
+	 */
+	SznAutocompleteLink.prototype._focus = function (e) {
+		if (this._options.focusEvent) {
+			var query = e.target.value;
+			if(query.length==0) query="space";
+			this._delayTimeout = this._$timeout((function () {
+				this._getResults(query);
+			}).bind(this), this._options.delay);
+		}
 	};
 
 	/**
@@ -239,7 +255,7 @@
 	SznAutocompleteLink.prototype._show = function () {
 		if (!this._popupScope.show) {
 			this._popupScope.show = true;
-			this._$scope.$emit("sznAutocomplete-show", {instanceId: this._options.uniqueId});
+			this._$scope.$emit("sznAutocomplete-show", { instanceId: this._options.uniqueId });
 		}
 	};
 
@@ -267,7 +283,7 @@
 
 			if (digest) { this._popupScope.$digest(); }
 
-			this._$scope.$emit("sznAutocomplete-hide", {instanceId: this._options.uniqueId});
+			this._$scope.$emit("sznAutocomplete-hide", { instanceId: this._options.uniqueId });
 		}
 	};
 
@@ -280,33 +296,33 @@
 			switch (e.keyCode) {
 				case 27: // ESC
 					this._hide(true);
-				break;
+					break;
 				case 13: // ENTER
 					var item = this._popupScope.results[this._popupScope.highlightIndex];
 					if (item) {
 						this._select(item);
 					}
-				break;
+					break;
 				case 38: // UP
 					e.preventDefault();
 					this._move(-1);
-				break;
+					break;
 				case 40: // DOWN
 					e.preventDefault();
 					this._move(1);
-				break;
+					break;
 				case 39: // RIGHT
 					if (this._options.shadowInput && this._popupScope.shadowInputValue) {
 						e.preventDefault();
 						this._copyFromShadow();
 					}
-				break;
+					break;
 				case 9: // TAB
 					if (this._options.shadowInput && this._popupScope.shadowInputValue) {
 						e.preventDefault();
 						this._copyFromShadow();
 					}
-				break;
+					break;
 			};
 		}
 	};
@@ -328,9 +344,9 @@
 		if (this._options.onSelect) {
 			// call the "onSelect" option callback
 			if (typeof this._options.onSelect == "string") {
-				this._$scope[this._options.onSelect](item,this._$scope);
+				this._$scope[this._options.onSelect](item, this._$scope);
 			} else if (typeof this._options.onSelect == "function") {
-				this._options.onSelect(item,this._$scope);
+				this._options.onSelect(item, this._$scope);
 			}
 		}
 	};
@@ -341,13 +357,13 @@
 	 */
 	SznAutocompleteLink.prototype._setValue = function (value) {
 		if (value) {
-			if(this._$scope[this._$attrs["ngModel"]]!=undefined){
+			if (this._$scope[this._$attrs["ngModel"]] != undefined) {
 				this._$scope[this._$attrs["ngModel"]] = value;
-			}else {
-				if(typeof value=="string"){
-					this._$scope.$eval(this._$attrs["ngModel"]+"='"+value+"'");
-				}else{
-					this._$scope.$eval(this._$attrs["ngModel"]+"="+value+"");
+			} else {
+				if (typeof value == "string") {
+					this._$scope.$eval(this._$attrs["ngModel"] + "='" + value + "'");
+				} else {
+					this._$scope.$eval(this._$attrs["ngModel"] + "=" + value + "");
 				}
 			}
 			this._$scope.$digest();
@@ -521,8 +537,8 @@
 	/**
 	 * Filter to bold search query matches in popup items
 	 */
-	ngModule.filter("sznAutocompleteBoldMatch", function() {
-		return function(matchItem, query) {
+	ngModule.filter("sznAutocompleteBoldMatch", function () {
+		return function (matchItem, query) {
 			var i = matchItem.toLowerCase().indexOf(query.toLowerCase());
 			if (i < 0) {
 				return matchItem;
@@ -540,7 +556,7 @@
 	/**
 	 * Shadow input template
 	 */
-	angular.module("angular-szn-autocomplete/template/shadowinput.html", []).run(["$templateCache", function($templateCache) {
+	angular.module("angular-szn-autocomplete/template/shadowinput.html", []).run(["$templateCache", function ($templateCache) {
 		$templateCache.put("angular-szn-autocomplete/template/shadowinput.html",
 			'<input type="text" class="szn-autocomplete-shadow-input szn-shadow" ng-value="shadowInputValue" disabled="disabled">'
 		);
@@ -549,13 +565,13 @@
 	/**
 	 * Default popup template
 	 */
-	angular.module("angular-szn-autocomplete/template/default.html", []).run(["$templateCache", function($templateCache) {
+	angular.module("angular-szn-autocomplete/template/default.html", []).run(["$templateCache", function ($templateCache) {
 		$templateCache.put("angular-szn-autocomplete/template/default.html",
 			'<ul ng-show="show" class="szn-autocomplete-results" ng-class="{loading: loading}">\n' +
-				'<li szn-autocomplete-result ng-repeat="result in results" ng-class="{selected: highlightIndex == $index}">\n' +
-					'<span ng-if="boldMatches" view-as-html="result.value | sznAutocompleteBoldMatch:query"></span>\n' +
-					'<span ng-if="!boldMatches">{{result.value}}</span>\n' +
-				'</li>\n' +
+			'<li szn-autocomplete-result ng-repeat="result in results" ng-class="{selected: highlightIndex == $index}">\n' +
+			'<span ng-if="boldMatches" view-as-html="result.value | sznAutocompleteBoldMatch:query"></span>\n' +
+			'<span ng-if="!boldMatches">{{result.value}}</span>\n' +
+			'</li>\n' +
 			'</ul>'
 		);
 	}]);
